@@ -7,4 +7,4 @@ import { MotorPartsService } from './motor-parts.service';
   providers: [MotorPartsService],
   exports: [MotorPartsService],
 })
-export class MotorPartsModule {}
+export class MotorPartsModule {} 

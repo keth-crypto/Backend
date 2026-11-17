@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
+// @ts-ignore passport-jwt does not include type declarations in this project.
 import { Strategy, ExtractJwt } from 'passport-jwt';
 
 @Injectable()
