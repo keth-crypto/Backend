@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
-import { DatabaseModule } from '../database/database.module';
+import { DatabaseModule } from '../src/database/database.module';
 
 @Module({
   imports: [
