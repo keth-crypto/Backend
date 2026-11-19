@@ -1,4 +1,3 @@
-
 import {
   Controller,
   Get,
@@ -7,25 +6,22 @@ import {
   Delete,
   Body,
   Param,
-  UseGuards,
 } from '@nestjs/common';
 
 import { SuppliersService } from './suppliers.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
+// TANDAAN: Tinanggal muna ang JwtAuthGuard para sa testing.
+// Ibalik ito kapag may login page na ang frontend.
 
 @Controller('suppliers')
 export class SuppliersController {
-  constructor(
-    private suppliersService: SuppliersService,
-  ) {}
+  constructor(private suppliersService: SuppliersService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Get()
   async getAll() {
     return this.suppliersService.getAll();
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
   async getOne(@Param('id') id: string) {
     return this.suppliersService.findById(+id);
@@ -37,21 +33,17 @@ export class SuppliersController {
     body: {
       supplier_name: string;
       contact_number?: string;
+      address?: string;
     },
   ) {
     return this.suppliersService.create(body);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() body: any,
-  ) {
+  async update(@Param('id') id: string, @Body() body: any) {
     return this.suppliersService.update(+id, body);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.suppliersService.delete(+id);

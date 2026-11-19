@@ -1,66 +1,32 @@
-
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  UseGuards,
+  Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put,
 } from '@nestjs/common';
-
 import { MotorPartsService } from './motor-parts.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { MotorPartDto } from './motor-part.dto';
 
+// HYPHEN ang route: /motor-parts
+// Kung may auth guard ka, idagdag ang @UseGuards(...) dito.
 @Controller('motor-parts')
 export class MotorPartsController {
-  constructor(
-    private motorPartsService: MotorPartsService,
-  ) {}
+  constructor(private readonly service: MotorPartsService) {}
 
-  // Get all motor parts
-  @UseGuards(JwtAuthGuard)
   @Get()
-  async getAll() {
-    return this.motorPartsService.getAll();
+  findAll() {
+    return this.service.findAll();
   }
 
-  // Get single motor part by id
-  @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  async getOne(@Param('id') id: string) {
-    return this.motorPartsService.findById(+id);
-  }
-
-  // Create motor part
   @Post()
-  async create(
-    @Body()
-    body: {
-      motorPart: string;
-      price: number;
-      brand_id: number;
-      supplier_id: number;
-    },
-  ) {
-    return this.motorPartsService.create(body);
+  create(@Body() dto: MotorPartDto) {
+    return this.service.create(dto);
   }
 
-  // Update motor part
-  @UseGuards(JwtAuthGuard)
   @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() body: any,
-  ) {
-    return this.motorPartsService.update(+id, body);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: MotorPartDto) {
+    return this.service.update(id, dto);
   }
 
-  // Delete motor part
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return this.motorPartsService.delete(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.service.remove(id);
   }
 }

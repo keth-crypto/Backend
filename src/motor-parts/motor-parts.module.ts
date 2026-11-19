@@ -5,6 +5,5 @@ import { MotorPartsService } from './motor-parts.service';
 @Module({
   controllers: [MotorPartsController],
   providers: [MotorPartsService],
-  exports: [MotorPartsService],
 })
-export class MotorPartsModule {} 
+export class MotorPartsModule {}

@@ -1,117 +1,72 @@
-
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-
-import { DatabaseService } from '../database/database.service';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { createPool, Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
+import { MotorPartDto } from './motor-part.dto';
 
 @Injectable()
-export class MotorPartsService {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+export class MotorPartsService implements OnModuleInit {
+  private pool: Pool = createPool({
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT ?? 3306),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+    waitForConnections: true,
+    connectionLimit: 5,
+  });
 
-  // Get all motor parts with brand and supplier
-  async getAll() {
-    return this.databaseService.query(`
-      SELECT
-        mp.part_id,
-        mp.motorPart,
-        mp.price,
-        b.brand_name,
-        s.supplier_name
-      FROM motor_parts mp
-      INNER JOIN brands b
-        ON mp.brand_id = b.brand_id
-      INNER JOIN suppliers s
-        ON mp.supplier_id = s.supplier_id
+  // Gagawa ng table kung wala pa
+  async onModuleInit() {
+    await this.pool.query(`
+      CREATE TABLE IF NOT EXISTS motor_parts (
+        part_id     INT AUTO_INCREMENT PRIMARY KEY,
+        motorPart   VARCHAR(255) NOT NULL,
+        price       DECIMAL(12,2) NOT NULL,
+        brand_id    INT NOT NULL,
+        supplier_id INT NOT NULL
+      )
     `);
+    console.log('motor_parts table ready');
   }
 
-  // Get one motor part by ID
-  async findById(id: number) {
-    const rows: any = await this.databaseService.query(
-      'SELECT * FROM motor_parts WHERE part_id = ?',
+  private async findOne(id: number) {
+    const [rows] = await this.pool.query<RowDataPacket[]>(
+      'SELECT part_id, motorPart, price, brand_id, supplier_id FROM motor_parts WHERE part_id = ?',
       [id],
     );
-
-    if (rows.length === 0) {
-      throw new NotFoundException('Motor part not found');
-    }
-
     return rows[0];
   }
 
-  // Create a motor part
-  async create(body: {
-    motorPart: string;
-    price: number;
-    brand_id: number;
-    supplier_id: number;
-  }) {
-    const result: any = await this.databaseService.query(
-      `INSERT INTO motor_parts
-        (motorPart, price, brand_id, supplier_id)
-       VALUES (?, ?, ?, ?)`,
-      [
-        body.motorPart,
-        body.price,
-        body.brand_id,
-        body.supplier_id,
-      ],
+  async findAll() {
+    const [rows] = await this.pool.query<RowDataPacket[]>(
+      'SELECT part_id, motorPart, price, brand_id, supplier_id FROM motor_parts ORDER BY part_id',
     );
-
-    return {
-      message: 'Motor part created successfully',
-      part_id: result.insertId,
-    };
+    return rows;
   }
 
-  // Update a motor part
-  async update(
-    id: number,
-    body: {
-      motorPart: string;
-      price: number;
-      brand_id: number;
-      supplier_id: number;
-    },
-  ) {
-    await this.findById(id);
-
-    await this.databaseService.query(
-      `UPDATE motor_parts
-       SET motorPart = ?,
-           price = ?,
-           brand_id = ?,
-           supplier_id = ?
-       WHERE part_id = ?`,
-      [
-        body.motorPart,
-        body.price,
-        body.brand_id,
-        body.supplier_id,
-        id,
-      ],
+  async create(d: MotorPartDto) {
+    const [res] = await this.pool.query<ResultSetHeader>(
+      'INSERT INTO motor_parts (motorPart, price, brand_id, supplier_id) VALUES (?, ?, ?, ?)',
+      [d.motorPart, d.price, d.brand_id, d.supplier_id],
     );
-
-    return {
-      message: 'Motor part updated successfully',
-    };
+    return this.findOne(res.insertId);
   }
 
-  // Delete a motor part
-  async delete(id: number) {
-    await this.findById(id);
+  async update(id: number, d: MotorPartDto) {
+    const [res] = await this.pool.query<ResultSetHeader>(
+      'UPDATE motor_parts SET motorPart = ?, price = ?, brand_id = ?, supplier_id = ? WHERE part_id = ?',
+      [d.motorPart, d.price, d.brand_id, d.supplier_id, id],
+    );
+    if (!res.affectedRows) throw new NotFoundException('Motor part not found');
+    return this.findOne(id);
+  }
 
-    await this.databaseService.query(
+  async remove(id: number) {
+    const [res] = await this.pool.query<ResultSetHeader>(
       'DELETE FROM motor_parts WHERE part_id = ?',
       [id],
     );
-
-    return {
-      message: 'Motor part deleted successfully',
-    };
+    if (!res.affectedRows) throw new NotFoundException('Motor part not found');
+    return { deleted: true };
   }
 }
